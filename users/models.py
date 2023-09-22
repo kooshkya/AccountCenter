@@ -1,18 +1,30 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
-from .managers import UserManager
+
+class Wallet(models.Model):
+    def balance(self):
+        total_received = self.payments_received.filter(receiver=self).aggregate(
+            total_received=models.Sum("amount")).get(
+            "total_received")
+        total_payed = self.payments_received.filter(receiver=self).aggregate(total_received=models.Sum("amount")).get(
+            "total_received")
+        return total_received - total_payed
+
+
+class Payment(models.Model):
+    payer = models.ForeignKey(Wallet, on_delete=models.PROTECT, related_name="payments_made", null=True)
+    receiver = models.ForeignKey(Wallet, on_delete=models.PROTECT, related_name="payments_received", null=True)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
 
 
 class User(AbstractUser):
-    username = None
-    email = models.EmailField(_("email address"), unique=True)
+    phone_number = models.CharField(max_length=15, blank=True)
+    wallet = models.OneToOneField(Wallet, on_delete=models.PROTECT)
 
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
 
-    objects = UserManager()
-
-    def __str__(self):
-        return self.email
+class Event(models.Model):
+    title = models.CharField(max_length=50)
+    wallet = models.OneToOneField(Wallet, on_delete=models.PROTECT)
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name="events_owned")
+    staff = models.ManyToManyField(User, related_name="events_staffed")
