@@ -1,19 +1,18 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
-# class Wallet(models.Model):
-#     hey = models.IntegerField()
-#
-#     def balance(self):
-#         total_received = self.payments_received.filter(receiver=self).aggregate(
-#             total_received=models.Sum("amount")).get(
-#             "total_received")
-#         total_payed = self.payments_made.filter(receiver=self).aggregate(total_received=models.Sum("amount")).get(
-#             "total_received")
-#         return total_received - total_payed
 class Wallet(models.Model):
-    pass
+    hey = models.IntegerField()
+
+    def balance(self):
+        total_received = self.payments_received.filter(receiver=self).aggregate(
+            total_received=models.Sum("amount")).get(
+            "total_received")
+        total_payed = self.payments_made.filter(receiver=self).aggregate(total_received=models.Sum("amount")).get(
+            "total_received")
+        return total_received - total_payed
 
 
 class Payment(models.Model):
@@ -24,6 +23,8 @@ class Payment(models.Model):
 
 
 class User(AbstractUser):
+    email = models.EmailField(_("email address"), unique=True)
+
     phone_number = models.CharField(max_length=15, blank=True)
     wallet = models.OneToOneField("Wallet", on_delete=models.PROTECT, null=True)
 
