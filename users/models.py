@@ -4,8 +4,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Wallet(models.Model):
-    hey = models.IntegerField()
-
     def balance(self):
         total_received = self.payments_received.filter(receiver=self).aggregate(
             total_received=models.Sum("amount")).get(
