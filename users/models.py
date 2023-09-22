@@ -22,6 +22,11 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True)
     wallet = models.OneToOneField(Wallet, on_delete=models.PROTECT)
 
+    def save(self, *args, **kwargs):
+        if not self.wallet:
+            self.wallet = Wallet.objects.create()
+        super().save(*args, **kwargs)
+
 
 class Event(models.Model):
     title = models.CharField(max_length=50)
