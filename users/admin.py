@@ -1,30 +1,43 @@
 from django.contrib import admin
-from .models import NewUser
 from django.contrib.auth.admin import UserAdmin
-from django.forms import TextInput, Textarea
+from django.utils.translation import gettext_lazy as _
+from .models import User, Event, Payment, Wallet
 
 
-class UserAdminConfig(UserAdmin):
-    model = NewUser
-    search_fields = ('email', 'user_name', 'first_name',)
-    list_filter = ('email', 'user_name', 'first_name', 'is_active', 'is_staff')
-    ordering = ('-start_date',)
-    list_display = ('email', 'user_name', 'first_name',
-                    'is_active', 'is_staff')
+class EventAdmin(admin.ModelAdmin):
+    pass
+
+
+class WalletAdmin(admin.ModelAdmin):
+    pass
+
+
+class PaymentAdmin(admin.ModelAdmin):
+    pass
+
+
+class CustomUserAdmin(UserAdmin):
     fieldsets = (
-        (None, {'fields': ('email', 'user_name', 'first_name',)}),
-        ('Permissions', {'fields': ('is_staff', 'is_active')}),
-        ('Personal', {'fields': ('about',)}),
-    )
-    formfield_overrides = {
-        NewUser.about: {'widget': Textarea(attrs={'rows': 10, 'cols': 40})},
-    }
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'user_name', 'first_name', 'password1', 'password2', 'is_active', 'is_staff')}
-         ),
+        (None, {"fields": ("username", "password")}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        (_("Custom Fields"), {"fields": ("wallet", "phone_number")}),
+        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
 
 
-admin.site.register(NewUser, UserAdminConfig)
+admin.site.register(User, CustomUserAdmin)
+admin.site.register(Event, EventAdmin)
+admin.site.register(Wallet, WalletAdmin)
+admin.site.register(Payment, PaymentAdmin)

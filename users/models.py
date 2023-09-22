@@ -1,54 +1,41 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
 
-class CustomAccountManager(BaseUserManager):
+class Wallet(models.Model):
+    hey = models.IntegerField()
 
-    def create_superuser(self, email, user_name, first_name, password, **other_fields):
-
-        other_fields.setdefault('is_staff', True)
-        other_fields.setdefault('is_superuser', True)
-        other_fields.setdefault('is_active', True)
-
-        if other_fields.get('is_staff') is not True:
-            raise ValueError(
-                'Superuser must be assigned to is_staff=True.')
-        if other_fields.get('is_superuser') is not True:
-            raise ValueError(
-                'Superuser must be assigned to is_superuser=True.')
-
-        return self.create_user(email, user_name, first_name, password, **other_fields)
-
-    def create_user(self, email, user_name, first_name, password, **other_fields):
-
-        if not email:
-            raise ValueError(_('You must provide an email address'))
-
-        email = self.normalize_email(email)
-        user = self.model(email=email, user_name=user_name,
-                          first_name=first_name, **other_fields)
-        user.set_password(password)
-        user.save()
-        return user
+    def balance(self):
+        total_received = self.payments_received.filter(receiver=self).aggregate(
+            total_received=models.Sum("amount")).get(
+            "total_received")
+        total_payed = self.payments_made.filter(receiver=self).aggregate(total_received=models.Sum("amount")).get(
+            "total_received")
+        return total_received - total_payed
 
 
-class NewUser(AbstractBaseUser, PermissionsMixin):
+class Payment(models.Model):
+    print("running payment")
+    payer = models.ForeignKey(Wallet, on_delete=models.PROTECT, related_name="payments_made", null=True)
+    receiver = models.ForeignKey(Wallet, on_delete=models.PROTECT, related_name="payments_received", null=True)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
 
-    email = models.EmailField(_('email address'), unique=True)
-    user_name = models.CharField(max_length=150, unique=True)
-    first_name = models.CharField(max_length=150, blank=True)
-    start_date = models.DateTimeField(default=timezone.now)
-    about = models.TextField(_(
-        'about'), max_length=500, blank=True)
-    is_staff = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=False)
 
-    objects = CustomAccountManager()
+class User(AbstractUser):
+    email = models.EmailField(_("email address"), unique=True)
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['user_name', 'first_name']
+    phone_number = models.CharField(max_length=15, blank=True)
+    wallet = models.OneToOneField("Wallet", on_delete=models.PROTECT, null=True)
 
-    def __str__(self):
-        return self.user_name
+    def save(self, *args, **kwargs):
+        if not self.wallet:
+            self.wallet = Wallet.objects.create()
+        super().save(*args, **kwargs)
+
+
+class Event(models.Model):
+    title = models.CharField(max_length=50)
+    wallet = models.OneToOneField(Wallet, on_delete=models.PROTECT)
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name="events_owned")
+    staff = models.ManyToManyField(User, related_name="events_staffed")
