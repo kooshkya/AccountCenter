@@ -2,17 +2,22 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
+# class Wallet(models.Model):
+#     hey = models.IntegerField()
+#
+#     def balance(self):
+#         total_received = self.payments_received.filter(receiver=self).aggregate(
+#             total_received=models.Sum("amount")).get(
+#             "total_received")
+#         total_payed = self.payments_made.filter(receiver=self).aggregate(total_received=models.Sum("amount")).get(
+#             "total_received")
+#         return total_received - total_payed
 class Wallet(models.Model):
-    def balance(self):
-        total_received = self.payments_received.filter(receiver=self).aggregate(
-            total_received=models.Sum("amount")).get(
-            "total_received")
-        total_payed = self.payments_received.filter(receiver=self).aggregate(total_received=models.Sum("amount")).get(
-            "total_received")
-        return total_received - total_payed
+    pass
 
 
 class Payment(models.Model):
+    print("running payment")
     payer = models.ForeignKey(Wallet, on_delete=models.PROTECT, related_name="payments_made", null=True)
     receiver = models.ForeignKey(Wallet, on_delete=models.PROTECT, related_name="payments_received", null=True)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
@@ -20,7 +25,7 @@ class Payment(models.Model):
 
 class User(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True)
-    wallet = models.OneToOneField(Wallet, on_delete=models.PROTECT)
+    wallet = models.OneToOneField("Wallet", on_delete=models.PROTECT, null=True)
 
     def save(self, *args, **kwargs):
         if not self.wallet:
